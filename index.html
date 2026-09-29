@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Foster Warehouse Brawl - 2 Player</title>
+<style>
+    body { 
+        text-align: center; 
+        font-family: 'Courier New', Courier, monospace; 
+        background: #222; 
+        color: white; 
+        margin-top: 30px; 
+    }
+    .title-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+    .title-fountain {
+        height: 40px;
+        width: auto;
+    }
+    #game-board {
+        width: 1150px; 
+        height: 550px;
+        background-image: url('background.png');
+        background-size: 200% 200%;
+        background-position: center;
+        background-repeat: no-repeat;
+        border: 4px solid #fff;
+        position: relative;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    #game-board.shifted-bg {
+        background-position-y: bottom;
+    }
+    #game-board.shifted-bg-mid {
+        background-position-y: 65%;
+    }
+    .character {
+        width: 210px; 
+        height: 210px; 
+        position: absolute; 
+        bottom: 60px; 
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center bottom;
+        transition: transform 0.1s, opacity 0.2s;
+    }
+    
+    #p1 { left: 70px; z-index: 2; }
+    #p2 { left: 870px; z-index: 2; }
+
+    /* Power-up Item Element */
+    #powerup-item {
+        width: 45px;
+        height: 45px;
+        position: absolute;
+        top: -50px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        z-index: 8;
+        display: none;
+    }
+
+    /* Health Power-up Item Element */
+    #health-item {
+        width: 45px;
+        height: 45px;
+        position: absolute;
+        top: -50px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        z-index: 8;
+        display: none;
+    }
+
+    .hud { 
+        display: flex; 
+        justify-content: space-between; 
+        padding: 15px 20px; 
+        position: absolute; 
+        width: 100%; 
+        box-sizing: border-box;
+        z-index: 5;
+    }
+    .health-box { 
+        width: 100%; 
+        background: #000; 
+        height: 30px; 
+        border: 3px solid #fff; 
+        position: relative;
+    }
+    .health-bar { 
+        height: 100%; 
+        background: #4CAF50; 
+        transition: width 0.5s ease; 
+    }
+    #p2-hp { 
+        background: #4CAF50; 
+        right: 0; 
+        position: absolute;
+    }
+    .info-container {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 6px 10px;
+        border-radius: 6px;
+        margin-top: 5px;
+        display: inline-block;
+    }
+    .name-tag {
+        font-weight: bold;
+        font-size: 18px;
+        text-shadow: 2px 2px #000;
+    }
+    .win-counter {
+        font-size: 15px;
+        color: #ff0;
+        text-shadow: 2px 2px #000;
+        margin-top: 2px;
+    }
+    #message { 
+        position: absolute; 
+        top: 25%; 
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 16px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid #fff;
+        border-radius: 8px;
+        font-size: 32px;
+        font-weight: bold; 
+        color: yellow; 
+        text-shadow: 3px 3px #000; 
+        display: none; 
+        z-index: 10; 
+    }
+    #restart-message {
+        position: absolute;
+        bottom: 15px;
+        width: 100%;
+        font-size: 20px;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 2px 2px #000;
+        display: none;
+        z-index: 10;
+    }
+    #grand-prize-message {
+        position: absolute;
+        top: 25px;
+        width: 100%;
+        font-size: 42px;
+        font-weight: bold;
+        color: #000000;
+        text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 30px #ffffff, 0 0 40px #ffffff;
+        display: none;
+        z-index: 15;
+    }
+    #dillon {
+        width: 210px;
+        height: 210px;
+        position: absolute;
+        top: -220px;
+        background-size: auto 100%;
+        background-repeat: no-repeat;
+        background-position: center bottom;
+        z-index: 12;
+        transition: top 2.5s ease-out;
+    }
+
+    #char-select-screen {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('background.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
+        padding: 10px 0;
+        box-sizing: border-box;
+        transition: background-image 0.3s ease-in-out;
+    }
+    .select-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+        max-width: 1000px;
+        margin-top: 5px;
+    }
+    .player-select-box {
+        text-align: center;
+        width: 40%;
+    }
+    .select-portraits {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+    }
+    .portrait-option {
+        width: 80px;
+        height: 80px;
+        border: 3px solid #555;
+        border-radius: 10px;
+        cursor: pointer;
+        background-size: auto 100%;
+        background-repeat: no-repeat;
+        background-position: center bottom;
+        background-color: #111;
+        transition: 0.2s;
+        transform: scaleX(1); 
+    }
+    #p1-select-alex, #p2-select-alex {
+        transform: scale(1.1);
+    }
+    #p1-select-dave, #p2-select-dave {
+        transform: scaleX(-1);
+    }
+    #p1-select-steve, #p2-select-dilly, #p2-select-steve, #p1-select-dilly {
+        transform: scaleX(1);
+    }
+    .portrait-option.selected {
+        border-color: #ff0;
+        box-shadow: 0 0 20px #ff0;
+    }
+    .portrait-option.selected#p1-select-steve,
+    .portrait-option.selected#p2-select-steve,
+    .portrait-option.selected#p1-select-dilly,
+    .portrait-option.selected#p2-select-dilly {
+        transform: scaleX(1) scale(1.05);
+    }
+    .portrait-option.selected#p1-select-alex,
+    .portrait-option.selected#p2-select-alex {
+        transform: scale(1.15);
+    }
+    .portrait-option.selected#p1-select-dave,
+    .portrait-option.selected#p2-select-dave {
+        transform: scaleX(-1) scale(1.05);
+    }
+
+    /* Layout wrapper for bottom options & side previews */
+    .menu-lower-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        width: 100%;
+        max-width: 1100px;
+        margin-top: 10px;
+        gap: 15px;
+    }
+    .preview-box {
+        width: 180px;
+        height: 250px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .preview-char {
+        width: 160px;
+        height: 230px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center bottom;
+    }
+    .menu-center-options {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        max-width: 600px;
+    }
+    
+    .powerup-section {
+        border: 2px dashed #666;
+        padding: 8px 20px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.65);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .powerup-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px 15px;
+        margin-top: 4px;
+        text-align: left;
+        font-size: 14px;
+    }
+    .powerup-grid label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Level Select Section Styles */
+    .level-section {
+        margin-top: 10px;
+        border: 2px dashed #666;
+        padding: 8px 20px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.65);
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+    }
+    .level-portraits {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 8px;
+    }
+    .level-option {
+        width: 100px;
+        height: 65px;
+        border: 3px solid #555;
+        border-radius: 8px;
+        cursor: pointer;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-color: #111;
+        transition: 0.2s;
+    }
+    .level-option.selected {
+        border-color: #ff0;
+        box-shadow: 0 0 20px #ff0;
+        transform: scale(1.08);
+    }
+
+    .start-btn-box {
+        width: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+    #start-brawl-btn {
+        padding: 14px 22px;
+        font-size: 16px;
+        font-weight: bold;
+        font-family: 'Courier New', Courier, monospace;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: none;
+        box-shadow: 0 0 12px #4CAF50;
+        white-space: nowrap;
+    }
+    #start-brawl-btn:hover {
+        background: #45a049;
+    }
+    .computer-toggle-label {
+        font-size: 13px;
+        color: #0ff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+</style>
+</head>
+<body>
+    <div class="title-container">
+        <img src="fountain1.png" alt="fountain" class="title-fountain">
+        <h1 style="margin: 0;">FOSTER BRAWL!</h1>
+        <img src="fountain1.png" alt="fountain" class="title-fountain" style="margin-left: -8px;">
+    </div>
+    <p><strong>P1:</strong> A/D Move | W Jump | S Crouch | Spacebar Punch<br>
+       <strong>P2:</strong> Left/Right Move | Up Arrow Jump | Down Arrow Crouch | Enter Punch</p>
+    
+    <div id="game-board">
+        <div id="char-select-screen">
+            <h2 style="margin: 6px 0; font-size: 22px; color: yellow;">SELECT YOUR FIGHTERS</h2>
+            <div class="select-container">
+                <div class="player-select-box">
+                    <h3 style="font-size: 16px; margin: 4px 0;">P1 Selection</h3>
+                    <div class="select-portraits">
+                        <div class="portrait-option" id="p1-select-steve" onclick="selectCharacter(1, 'steve')" style="background-image: url('steve.png');"></div>
+                        <div class="portrait-option" id="p1-select-alex" onclick="selectCharacter(1, 'alex')" style="background-image: url('alex.png');"></div>
+                        <div class="portrait-option" id="p1-select-dave" onclick="selectCharacter(1, 'dave')" style="background-image: url('dave.png');"></div>
+                        <div class="portrait-option" id="p1-select-dilly" onclick="selectCharacter(1, 'dilly')" style="background-image: url('dilly.png');"></div>
+                    </div>
+                    <p id="p1-choice-text" style="margin-top: 6px; color: #ff0; font-size: 16px; font-weight: bold;">Choose your fighter</p>
+                    <label class="computer-toggle-label" style="margin-top: 6px; justify-content: center;">
+                        <input type="checkbox" id="p1-is-computer" onchange="toggleComputer(1)"> P1 is Computer
+                    </label>
+                </div>
+
+                <div class="start-btn-box">
+                    <button id="start-brawl-btn" onclick="startBrawl()">START BRAWL</button>
+                </div>
+
+                <div class="player-select-box">
+                    <h3 style="font-size: 16px; margin: 4px 0;">P2 Selection</h3>
+                    <div class="select-portraits">
+                        <div class="portrait-option" id="p2-select-steve" onclick="selectCharacter(2, 'steve')" style="background-image: url('steve.png');"></div>
+                        <div class="portrait-option" id="p2-select-alex" onclick="selectCharacter(2, 'alex')" style="background-image: url('alex.png');"></div>
+                        <div class="portrait-option" id="p2-select-dave" onclick="selectCharacter(2, 'dave')" style="background-image: url('dave.png');"></div>
+                        <div class="portrait-option" id="p2-select-dilly" onclick="selectCharacter(2, 'dilly')" style="background-image: url('dilly.png');"></div>
+                    </div>
+                    <p id="p2-choice-text" style="margin-top: 6px; color: #ff0; font-size: 16px; font-weight: bold;">Choose your fighter</p>
+                    <label class="computer-toggle-label" style="margin-top: 6px; justify-content: center;">
+                        <input type="checkbox" id="p2-is-computer" onchange="toggleComputer(2)"> P2 is Computer
+                    </label>
+                </div>
+            </div>
+
+            <!-- Lower menu wrapper containing P1 preview, options, and P2 preview -->
+            <div class="menu-lower-container">
+                <div class="preview-box">
+                    <div class="preview-char" id="p1-standing-preview"></div>
+                </div>
+
+                <div class="menu-center-options">
+                    <div class="powerup-section">
+                        <h3 style="margin: 0 0 4px 0; font-size: 14px; color: #ff0;">POWER-UPS (GLOBAL)</h3>
+                        <div class="powerup-grid">
+                            <label><input type="checkbox" id="pw-health"> Health</label>
+                            <label><input type="checkbox" id="pw-big"> Big</label>
+                            <label><input type="checkbox" id="pw-small"> Small</label>
+                            <label><input type="checkbox" id="pw-invisible"> Invisible</label>
+                            <label><input type="checkbox" id="pw-fast"> Fast</label>
+                            <label><input type="checkbox" id="pw-slow"> Slow</label>
+                            <label><input type="checkbox" id="pw-frozen"> Frozen</label>
+                            <label><input type="checkbox" id="pw-death"> Instant Death</label>
+                            <label style="color: #ff0; font-weight: bold;"><input type="checkbox" id="pw-select-all" onclick="toggleSelectAll(this)"> Select All</label>
+                        </div>
+                    </div>
+
+                    <!-- Level Select Section -->
+                    <div class="level-section">
+                        <h3 style="margin: 0 0 4px 0; font-size: 14px; color: #ff0;">LEVEL SELECT</h3>
+                        <div class="level-portraits">
+                            <div class="level-option selected" id="lvl-warehouse" onclick="selectLevel('background.png', 'Warehouse')" style="background-image: url('background.png');"></div>
+                            <div class="level-option" id="lvl-building" onclick="selectLevel('fosterlake.png', 'Old Building')" style="background-image: url('fosterlake.png');"></div>
+                            <div class="level-option" id="lvl-pond" onclick="selectLevel('fosterpond.png', 'Foster Pond')" style="background-image: url('fosterpond.png');"></div>
+                            <div class="level-option" id="lvl-underwater" onclick="selectLevel('underwater.png', 'Underwater')" style="background-image: url('underwater.png');"></div>
+                        </div>
+                        <p id="level-choice-text" style="margin-top: 6px; color: #ff0; font-size: 16px; font-weight: bold;">Selected: WAREHOUSE</p>
+                    </div>
+                </div>
+
+                <div class="preview-box">
+                    <div class="preview-char" id="p2-standing-preview"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hud" id="hud-element">
+            <div style="width: 40%; text-align: left;">
+                <div class="health-box"><div class="health-bar" id="p1-hp" style="width: 100%;"></div></div>
+                <div class="info-container">
+                    <div class="name-tag" id="p1-name-tag">P1: STEVE</div>
+                    <div class="win-counter">Wins: <span id="p1-wins">0</span></div>
+                </div>
+            </div>
+            <div style="width: 40%; text-align: right;">
+                <div class="health-box"><div class="health-bar" id="p2-hp" style="width: 100%;"></div></div>
+                <div class="info-container">
+                    <div class="name-tag" id="p2-name-tag">P2: DAVE</div>
+                    <div class="win-counter">Wins: <span id="p2-wins">0</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="message">K.O. !!</div>
+        <div id="restart-message">Press TAB to restart fight</div>
+        <div id="grand-prize-message">You Won Your Very Own Dillon!</div>
+        
+        <div id="powerup-item"></div>
+        <div id="health-item" style="background-image: url('apple.png');"></div>
+
+        <div class="character" id="p1"></div>
+        <div class="character" id="p2"></div>
+        <div id="dillon"></div>
+    </div>
+
+    <script>
+        const p1 = document.getElementById('p1');
+        const p2 = document.getElementById('p2');
+        const gameBoard = document.getElementById('game-board');
+        const dillon = document.getElementById('dillon');
+        const powerupItem = document.getElementById('powerup-item');
+        const healthItem = document.getElementById('health-item');
+        const p1HpBar = document.getElementById('p1-hp');
+        const p2HpBar = document.getElementById('p2-hp');
+        const hudElement = document.getElementById('hud-element');
+        const message = document.getElementById('message');
+        const restartMessage = document.getElementById('restart-message');
+        const grandPrizeMessage = document.getElementById('grand-prize-message');
+        const p1WinsText = document.getElementById('p1-wins');
+        const p2WinsText = document.getElementById('p2-wins');
+        const charSelectScreen = document.getElementById('char-select-screen');
+        const startBrawlBtn = document.getElementById('start-brawl-btn');
+
+        let p1Selection = null;
+        let p2Selection = null;
+        let p1IsComputer = false;
+        let p2IsComputer = false;
+        let selectedLevelFile = 'background.png'; 
+
+        let p1AnimTimer = 0;
+        let p2AnimTimer = 0;
+        let p1LastPos = 600;
+        let p2LastPos = 1400;
+
+        function toggleComputer(playerNum) {
+            if (playerNum === 1) {
+                p1IsComputer = document.getElementById('p1-is-computer').checked;
+            } else {
+                p2IsComputer = document.getElementById('p2-is-computer').checked;
+            }
+        }
+
+        function toggleSelectAll(masterCheckbox) {
+            const checkboxes = [
+                'pw-health', 'pw-big', 'pw-small', 
+                'pw-invisible', 'pw-fast', 'pw-slow', 'pw-frozen', 'pw-death'
+            ];
+            checkboxes.forEach(id => {
+                document.getElementById(id).checked = masterCheckbox.checked;
+            });
+        }
+
+        const p1Status = { big: false, small: false, invisible: false, fast: false, slow: false, frozen: false };
+        const p2Status = { big: false, small: false, invisible: false, fast: false, slow: false, frozen: false };
+        
+        const p1Timers = {};
+        const p2Timers = {};
+
+        function getFacingScale(playerNum, statusObj, poseType) {
+            let character = (playerNum === 1) ? p1Selection : p2Selection;
+            let el = (playerNum === 1) ? p1 : p2;
+            
+            let defaultFacing = (character === 'dave') ? -1 : 1;
+
+            let shouldFaceRight = (playerNum === 1) ? (p1Pos < p2Pos) : (p2Pos < p1Pos);
+            let targetDirection = shouldFaceRight ? 1 : -1;
+
+            let baseDirection = targetDirection * defaultFacing;
+            
+            let mult = 1;
+            if (statusObj.big) mult = 2.0;       
+            if (statusObj.small) mult = 0.25;
+
+            let extraMult = 1;
+            if (poseType === 'jump') {
+                extraMult = (character === 'alex') ? 0.85 : 1.1;
+                el.style.backgroundPosition = "center bottom";
+            } else if (poseType === 'punch') {
+                if (character === 'dave') extraMult = 1.1;
+                else if (character === 'alex') extraMult = 0.95;
+                el.style.backgroundPosition = "center bottom";
+            } else if (poseType === 'run') {
+                if (character === 'alex') extraMult = 0.875; // Set halfway between 0.8 and 0.95
+                el.style.backgroundPosition = "center bottom";
+            } else if (poseType === 'dead') {
+                if (character === 'dilly') extraMult = 1.3;
+                else if (character === 'dave') extraMult = 1.15;
+                else extraMult = 1.0; 
+                el.style.backgroundPosition = "center bottom";
+            } else if (poseType === 'win') {
+                if (character === 'dilly') extraMult = 1.45;
+                else if (character === 'steve') extraMult = 1.35;
+                else if (character === 'alex') extraMult = 1.05;
+                else extraMult = 1.2; 
+                el.style.backgroundPosition = "center bottom";
+            } else {
+                el.style.backgroundPosition = "center bottom";
+            }
+
+            let crouchMult = 1;
+            let isCrouching = (playerNum === 1) ? p1Crouching : p2Crouching;
+            if (isCrouching) {
+                if (character === 'alex') crouchMult = 0.75;
+                else if (character === 'dilly') crouchMult = 1.15;
+                else if (character === 'steve') crouchMult = 0.98;
+                else crouchMult = 0.85;
+            }
+
+            let finalMult = mult * extraMult * crouchMult;
+
+            let characterScaleBonus = (character === 'alex') ? 1.12 : 1.0;
+            let totalMult = finalMult * characterScaleBonus;
+
+            return `scaleX(${baseDirection * totalMult}) scaleY(${totalMult})`;
+        }
+
+        function updatePlayerVisuals(playerNum, poseType = 'idle') {
+            let statusObj = (playerNum === 1) ? p1Status : p2Status;
+            let el = (playerNum === 1) ? p1 : p2;
+
+            el.style.opacity = statusObj.invisible ? '0' : '1';
+            el.style.transform = getFacingScale(playerNum, statusObj, poseType);
+        }
+
+        function selectCharacter(player, character) {
+            if (player === 1) {
+                p1Selection = character;
+                document.getElementById('p1-select-steve').classList.toggle('selected', character === 'steve');
+                document.getElementById('p1-select-alex').classList.toggle('selected', character === 'alex');
+                document.getElementById('p1-select-dave').classList.toggle('selected', character === 'dave');
+                document.getElementById('p1-select-dilly').classList.toggle('selected', character === 'dilly');
+                document.getElementById('p1-choice-text').innerText = "Selected: " + character.toUpperCase();
+
+                const p1Preview = document.getElementById('p1-standing-preview');
+                p1Preview.style.backgroundImage = `url('${character}.png')`;
+                p1Preview.style.transform = (character === 'dave') ? 'scaleX(-1.25) scaleY(1.25)' : 'scaleX(1)';
+            } else {
+                p2Selection = character;
+                document.getElementById('p2-select-steve').classList.toggle('selected', character === 'steve');
+                document.getElementById('p2-select-alex').classList.toggle('selected', character === 'alex');
+                document.getElementById('p2-select-dave').classList.toggle('selected', character === 'dave');
+                document.getElementById('p2-select-dilly').classList.toggle('selected', character === 'dilly');
+                document.getElementById('p2-choice-text').innerText = "Selected: " + character.toUpperCase();
+
+                const p2Preview = document.getElementById('p2-standing-preview');
+                p2Preview.style.backgroundImage = `url('${character}.png')`;
+                p2Preview.style.transform = (character === 'dave') ? 'scaleX(1.25) scaleY(1.25)' : 'scaleX(-1)';
+            }
+
+            if (p1Selection && p2Selection) {
+                startBrawlBtn.style.display = 'inline-block';
+            }
+        }
+
+        function selectLevel(filename, levelName) {
+            selectedLevelFile = filename;
+            document.getElementById('lvl-warehouse').classList.toggle('selected', filename === 'background.png');
+            document.getElementById('lvl-building').classList.toggle('selected', filename === 'fosterlake.png');
+            document.getElementById('lvl-pond').classList.toggle('selected', filename === 'fosterpond.png');
+            document.getElementById('lvl-underwater').classList.toggle('selected', filename === 'underwater.png');
+            document.getElementById('level-choice-text').innerText = "Selected: " + levelName.toUpperCase();
+
+            charSelectScreen.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('${filename}')`;
+
+            gameBoard.classList.remove('shifted-bg', 'shifted-bg-mid');
+
+            if (filename === 'fosterlake.png') {
+                gameBoard.classList.add('shifted-bg-mid');
+            } else if (filename !== 'background.png') {
+                gameBoard.classList.add('shifted-bg');
+            }
+        }
+
+        function getVerticalPos() {
+            if (gameBoard.classList.contains('shifted-bg-mid')) return '65%';
+            if (gameBoard.classList.contains('shifted-bg')) return 'bottom';
+            return 'center';
+        }
+
+        const worldWidth = 2000; 
+        const boardWidth = 1150;
+        let p1Pos = 600;
+        let p2Pos = 1400;
+        let cameraX = 425; 
+
+        let p1Health = 100;
+        let p2Health = 100;
+        let p1Wins = 0;
+        let p2Wins = 0;
+        let p1Punching = false;
+        let p2Punching = false;
+        let p1Jumping = false;
+        let p1Crouching = false;
+        let p2Jumping = false;
+        let p2Crouching = false;
+        
+        let p1JumpTimer = null;
+        let p2JumpTimer = null;
+        let p1FreezeAirTimeout = null;
+        let p2FreezeAirTimeout = null;
+
+        let gameOver = true; 
+        let matchEnded = false; 
+
+        let spawnTimeout = null;
+        let activeItem = null; 
+        let itemFalling = false;
+
+        let healthSpawnTimeout = null;
+        let activeHealthItem = null; 
+        let healthItemFalling = false;
+
+        const keys = {};
+
+        function resetStatuses() {
+            for (let k in p1Status) p1Status[k] = false;
+            for (let k in p2Status) p2Status[k] = false;
+            for (let k in p1Timers) clearTimeout(p1Timers[k]);
+            for (let k in p2Timers) clearTimeout(p2Timers[k]);
+            if (p1JumpTimer) clearTimeout(p1JumpTimer);
+            if (p2JumpTimer) clearTimeout(p2JumpTimer);
+            if (p1FreezeAirTimeout) clearTimeout(p1FreezeAirTimeout);
+            if (p2FreezeAirTimeout) clearTimeout(p2FreezeAirTimeout);
+        }
+
+        function applyPowerUps() {
+            p1Health = 100;
+            p2Health = 100;
+            p1HpBar.style.width = '100%';
+            p2HpBar.style.width = '100%';
+            resetStatuses();
+            p1.style.opacity = '1';
+            p2.style.opacity = '1';
+        }
+
+        function startBrawl() {
+            charSelectScreen.style.display = 'none';
+            gameOver = false;
+            
+            gameBoard.style.backgroundImage = `url('${selectedLevelFile}')`;
+
+            document.getElementById('p1-name-tag').innerText = "P1: " + p1Selection.toUpperCase() + (p1IsComputer ? " (CPU)" : "");
+            document.getElementById('p2-name-tag').innerText = "P2: " + p2Selection.toUpperCase() + (p2IsComputer ? " (CPU)" : "");
+            
+            applyPowerUps();
+
+            p1.style.backgroundImage = `url('${p1Selection}.png')`;
+            p2.style.backgroundImage = `url('${p2Selection}.png')`;
+            
+            updatePlayerVisuals(1, 'idle');
+            updatePlayerVisuals(2, 'idle');
+
+            p1LastPos = p1Pos;
+            p2LastPos = p2Pos;
+
+            scheduleNextItemSpawn();
+            scheduleNextHealthSpawn();
+        }
+
+        function scheduleNextItemSpawn() {
+            if (spawnTimeout) clearTimeout(spawnTimeout);
+            
+            let randomDelay = Math.floor(Math.random() * 2001) + 4000;
+
+            spawnTimeout = setTimeout(() => {
+                if (gameOver || charSelectScreen.style.display !== 'none') return;
+                
+                let availableTypes = [];
+                if (document.getElementById('pw-big').checked) availableTypes.push('big');
+                if (document.getElementById('pw-small').checked) availableTypes.push('small');
+                if (document.getElementById('pw-invisible').checked) availableTypes.push('invisible');
+                if (document.getElementById('pw-fast').checked) availableTypes.push('fast');
+                if (document.getElementById('pw-slow').checked) availableTypes.push('slow');
+                if (document.getElementById('pw-frozen').checked) availableTypes.push('frozen');
+                if (document.getElementById('pw-death').checked) availableTypes.push('death');
+
+                if (availableTypes.length === 0) {
+                    scheduleNextItemSpawn();
+                    return; 
+                }
+
+                let chosenType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+                let randomX = Math.floor(Math.random() * (worldWidth - 100));
+
+                activeItem = {
+                    type: chosenType,
+                    x: randomX,
+                    y: -50
+                };
+
+                let filename = (chosenType === 'death') ? 'death.png' : `${chosenType}.png`;
+                powerupItem.style.backgroundImage = `url('${filename}')`;
+                
+                if (chosenType === 'death') {
+                    powerupItem.style.width = '30px';
+                    powerupItem.style.height = '30px';
+                } else {
+                    powerupItem.style.width = '45px';
+                    powerupItem.style.height = '45px';
+                }
+
+                powerupItem.style.top = activeItem.y + 'px';
+                powerupItem.style.display = 'block';
+                itemFalling = true;
+
+            }, randomDelay);
+        }
+
+        function scheduleNextHealthSpawn() {
+            if (healthSpawnTimeout) clearTimeout(healthSpawnTimeout);
+
+            let healthDelay = 8000; 
+
+            healthSpawnTimeout = setTimeout(() => {
+                if (gameOver || charSelectScreen.style.display !== 'none') return;
+
+                if (!document.getElementById('pw-health').checked) {
+                    scheduleNextHealthSpawn();
+                    return;
+                }
+
+                let randomX = Math.floor(Math.random() * (worldWidth - 100));
+
+                activeHealthItem = {
+                    x: randomX,
+                    y: -50
+                };
+
+                healthItem.style.top = activeHealthItem.y + 'px';
+                healthItem.style.display = 'block';
+                healthItemFalling = true;
+
+            }, healthDelay);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (gameOver && (!charSelectScreen.style.display || charSelectScreen.style.display === 'none')) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    resetGame();
+                    return;
+                }
+            }
+
+            if (gameOver) return;
+
+            let isAlreadyPressed = keys[e.key];
+            keys[e.key] = true;
+
+            if (!p1IsComputer && !p1Status.frozen) {
+                if ((e.key === 'w' || e.key === 'W') && !p1Jumping && !p1Crouching && !isAlreadyPressed) {
+                    e.preventDefault();
+                    p1Jump();
+                }
+                if ((e.key === 's' || e.key === 'S') && !p1Jumping && !p1Crouching) {
+                    e.preventDefault();
+                    p1Crouch();
+                }
+                if (e.key === ' ' && !p1Punching && !isAlreadyPressed) {
+                    e.preventDefault(); 
+                    p1Punch();
+                }
+            }
+
+            if (!p2IsComputer && !p2Status.frozen) {
+                if (e.key === 'ArrowUp' && !p2Jumping && !p2Crouching && !isAlreadyPressed) {
+                    e.preventDefault();
+                    p2Jump();
+                }
+                if (e.key === 'ArrowDown' && !p2Jumping && !p2Crouching) {
+                    e.preventDefault();
+                    p2Crouch();
+                }
+                if (e.key === 'Enter' && !p2Punching && !isAlreadyPressed) {
+                    e.preventDefault();
+                    p2Punch();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+
+            if (!p1IsComputer && (e.key === 's' || e.key === 'S')) {
+                if (p1Crouching) {
+                    p1Crouching = false;
+                    p1.style.bottom = '60px'; 
+                    if (!p1Punching) {
+                        p1.style.backgroundImage = `url('${p1Selection}.png')`;
+                        updatePlayerVisuals(1, 'idle');
+                    }
+                }
+            }
+            if (!p2IsComputer && e.key === 'ArrowDown') {
+                if (p2Crouching) {
+                    p2Crouching = false;
+                    p2.style.bottom = '60px'; 
+                    if (!p2Punching) {
+                        p2.style.backgroundImage = `url('${p2Selection}.png')`;
+                        updatePlayerVisuals(2, 'idle');
+                    }
+                }
+            }
+        });
+
+        function getCpuTargetX(playerPos) {
+            let targetX = null;
+            let targetPriority = -1;
+
+            if (healthItemFalling && activeHealthItem) {
+                targetX = activeHealthItem.x;
+                targetPriority = 2;
+            }
+
+            if (itemFalling && activeItem && activeItem.type !== 'death') {
+                if (targetPriority < 1) {
+                    targetX = activeItem.x;
+                    targetPriority = 1;
+                }
+            }
+
+            if (targetX !== null) {
+                let charCenter = playerPos + 105;
+                let diff = targetX - charCenter;
+                if (Math.abs(diff) > 10) {
+                    return diff > 0 ? 1 : -1; 
+                }
+            }
+
+            if (itemFalling && activeItem && activeItem.type === 'death') {
+                let itemCenter = activeItem.x + 15;
+                let charCenter = playerPos + 105;
+                if (Math.abs(itemCenter - charCenter) < 150) {
+                    return itemCenter > charCenter ? -1 : 1; 
+                }
+            }
+
+            return 0; 
+        }
+
+        function updateComputerControls() {
+            if (gameOver || charSelectScreen.style.display !== 'none') return;
+
+            if (p1IsComputer && !p1Status.frozen) {
+                let baseSpeed = p1Status.fast ? 8 : (p1Status.slow ? 2 : 4);
+                let cpuDir = getCpuTargetX(p1Pos);
+
+                if (cpuDir !== 0) {
+                    let nextPos = p1Pos + (cpuDir * baseSpeed);
+                    let canMove = true;
+                    if (!p1Jumping && !p2Jumping) {
+                        if (cpuDir > 0 && nextPos + 130 > p2Pos + 80 && p1Pos <= p2Pos) canMove = false;
+                        if (cpuDir < 0 && nextPos + 80 < p2Pos + 130 && p1Pos >= p2Pos) canMove = false;
+                    }
+                    if (canMove) p1Pos = nextPos;
+                } else {
+                    let distance = p2Pos - p1Pos;
+                    let absDist = Math.abs(distance);
+
+                    if (absDist > 140) {
+                        if (distance > 0) {
+                            let nextPos = p1Pos + baseSpeed;
+                            let canMove = true;
+                            if (!p1Jumping && !p2Jumping && nextPos + 130 > p2Pos + 80) canMove = false;
+                            if (canMove) p1Pos = nextPos;
+                        } else {
+                            let nextPos = p1Pos - baseSpeed;
+                            let canMove = true;
+                            if (!p1Jumping && !p2Jumping && nextPos + 80 < p2Pos + 130) canMove = false;
+                            if (canMove) p1Pos = nextPos;
+                        }
+                    } else {
+                        if (!p1Punching && Math.random() < 0.12) {
+                            p1Punch();
+                        }
+                    }
+                }
+
+                if (!p1Jumping && !p1Crouching && Math.random() < 0.015) {
+                    p1Jump();
+                }
+
+                let p1Pose = p1Jumping ? 'jump' : (p1Punching ? 'punch' : (p1Crouching ? 'crouch' : 'idle'));
+                updatePlayerVisuals(1, p1Pose);
+            }
+
+            if (p2IsComputer && !p2Status.frozen) {
+                let baseSpeed = p2Status.fast ? 8 : (p2Status.slow ? 2 : 4);
+                let cpuDir = getCpuTargetX(p2Pos);
+
+                if (cpuDir !== 0) {
+                    let nextPos = p2Pos + (cpuDir * baseSpeed);
+                    let canMove = true;
+                    if (!p2Jumping && !p1Jumping) {
+                        if (cpuDir > 0 && nextPos + 130 > p1Pos + 80 && p2Pos <= p1Pos) canMove = false;
+                        if (cpuDir < 0 && nextPos + 80 < p1Pos + 130 && p2Pos >= p1Pos) canMove = false;
+                    }
+                    if (canMove) p2Pos = nextPos;
+                } else {
+                    let distance = p1Pos - p2Pos;
+                    let absDist = Math.abs(distance);
+
+                    if (absDist > 140) {
+                        if (distance > 0) {
+                            let nextPos = p2Pos + baseSpeed;
+                            let canMove = true;
+                            if (!p2Jumping && !p1Jumping && nextPos + 130 > p1Pos + 80) canMove = false;
+                            if (canMove) p2Pos = nextPos;
+                        } else {
+                            let nextPos = p2Pos - baseSpeed;
+                            let canMove = true;
+                            if (!p2Jumping && !p1Jumping && nextPos + 80 < p1Pos + 130) canMove = false;
+                            if (canMove) p2Pos = nextPos;
+                        }
+                    } else {
+                        if (!p2Punching && Math.random() < 0.12) {
+                            p2Punch();
+                        }
+                    }
+                }
+
+                if (!p2Jumping && !p2Crouching && Math.random() < 0.015) {
+                    p2Jump();
+                }
+
+                let p2Pose = p2Jumping ? 'jump' : (p2Punching ? 'punch' : (p2Crouching ? 'crouch' : 'idle'));
+                updatePlayerVisuals(2, p2Pose);
+            }
+        }
+
+        function updateGame() {
+            if (!gameOver && charSelectScreen.style.display === 'none') {
+                let baseSpeed = 4;
+                let p1Speed = baseSpeed;
+                let p2Speed = baseSpeed;
+
+                if (p1Status.fast) p1Speed *= 2;
+                if (p1Status.slow) p1Speed *= 0.5;
+
+                if (p2Status.fast) p2Speed *= 2;
+                if (p2Status.slow) p2Speed *= 0.5;
+
+                if (!p1IsComputer && !p1Status.frozen) {
+                    if (keys['a'] || keys['A']) {
+                        let nextPos = p1Pos - p1Speed;
+                        let canMove = true;
+                        if (!p1Jumping && !p2Jumping && nextPos + 80 < p2Pos + 130 && p1Pos >= p2Pos) {
+                            canMove = false;
+                        }
+                        if (canMove) p1Pos = nextPos;
+                    }
+                    if (keys['d'] || keys['D']) {
+                        let nextPos = p1Pos + p1Speed;
+                        let canMove = true;
+                        if (!p1Jumping && !p2Jumping && nextPos + 130 > p2Pos + 80 && p1Pos <= p2Pos) {
+                            canMove = false;
+                        }
+                        if (canMove) p1Pos = nextPos;
+                    }
+                }
+
+                if (!p2IsComputer && !p2Status.frozen) {
+                    if (keys['ArrowLeft']) {
+                        let nextPos = p2Pos - p2Speed;
+                        let canMove = true;
+                        if (!p2Jumping && !p1Jumping && nextPos + 80 < p1Pos + 130 && p2Pos >= p1Pos) {
+                            canMove = false;
+                        }
+                        if (canMove) p2Pos = nextPos;
+                    }
+                    if (keys['ArrowRight']) {
+                        let nextPos = p2Pos + p2Speed;
+                        let canMove = true;
+                        if (!p2Jumping && !p1Jumping && nextPos + 130 > p1Pos + 80 && p2Pos <= p1Pos) {
+                            canMove = false;
+                        }
+                        if (canMove) p2Pos = nextPos;
+                    }
+                }
+
+                updateComputerControls();
+
+                if (p1Pos < 0) p1Pos = 0;
+                if (p1Pos > worldWidth - 210) p1Pos = worldWidth - 210;
+                if (p2Pos < 0) p2Pos = 0;
+                if (p2Pos > worldWidth - 210) p2Pos = worldWidth - 210;
+
+                let p1ActuallyMoved = Math.abs(p1Pos - p1LastPos) > 0.1;
+                let p2ActuallyMoved = Math.abs(p2Pos - p2LastPos) > 0.1;
+
+                p1LastPos = p1Pos;
+                p2LastPos = p2Pos;
+
+                let avgX = (p1Pos + p2Pos) / 2;
+                let targetCameraX = avgX - (boardWidth / 2);
+                if (targetCameraX < 0) targetCameraX = 0;
+                if (targetCameraX > worldWidth - boardWidth) targetCameraX = worldWidth - boardWidth;
+
+                cameraX += (targetCameraX - cameraX) * 0.03;
+
+                p1.style.left = (p1Pos - cameraX) + 'px';
+                p2.style.left = (p2Pos - cameraX) + 'px';
+                
+                let bgOffsetPercent = (cameraX / (worldWidth - boardWidth)) * 100;
+                let verticalPos = getVerticalPos();
+                gameBoard.style.backgroundPosition = `${bgOffsetPercent}% ${verticalPos}`;
+
+                let p1Pose = p1Jumping ? 'jump' : (p1Punching ? 'punch' : (p1Crouching ? 'crouch' : (p1ActuallyMoved ? 'run' : 'idle')));
+                updatePlayerVisuals(1, p1Pose);
+
+                if (p1ActuallyMoved && !p1Punching && !p1Jumping && !p1Crouching) {
+                    p1AnimTimer++;
+                    let frame = Math.floor(p1AnimTimer / 16) % 2;
+                    p1.style.backgroundImage = frame === 0 ? `url('${p1Selection}run.png')` : `url('${p1Selection}.png')`;
+                } else {
+                    p1AnimTimer = 0;
+                    if (!p1Punching && !p1Jumping && !p1Crouching) {
+                        p1.style.backgroundImage = `url('${p1Selection}.png')`;
+                    }
+                }
+
+                let p2Pose = p2Jumping ? 'jump' : (p2Punching ? 'punch' : (p2Crouching ? 'crouch' : (p2ActuallyMoved ? 'run' : 'idle')));
+                updatePlayerVisuals(2, p2Pose);
+
+                if (p2ActuallyMoved && !p2Punching && !p2Jumping && !p2Crouching) {
+                    p2AnimTimer++;
+                    let frame = Math.floor(p2AnimTimer / 16) % 2;
+                    p2.style.backgroundImage = frame === 0 ? `url('${p2Selection}run.png')` : `url('${p2Selection}.png')`;
+                } else {
+                    p2AnimTimer = 0;
+                    if (!p2Punching && !p2Jumping && !p2Crouching) {
+                        p2.style.backgroundImage = `url('${p2Selection}.png')`;
+                    }
+                }
+
+                if (itemFalling && activeItem) {
+                    let fallSpeed = (activeItem.type === 'death') ? 2.0 : 1.2;
+                    activeItem.y += fallSpeed;
+                    powerupItem.style.top = activeItem.y + 'px';
+                    powerupItem.style.left = (activeItem.x - cameraX) + 'px'; 
+
+                    if (activeItem.y >= 505) {
+                        removeActiveItem();
+                        scheduleNextItemSpawn();
+                    } else {
+                        let itemCenterX = activeItem.x + 22.5;
+                        let itemCenterY = activeItem.y + 22.5;
+                        
+                        let p1LeftHit = p1Pos + 50;
+                        let p1RightHit = p1Pos + 160;
+                        let p1TopHit = p1Jumping ? 170 : (p1Crouching ? 330 : 240);
+                        let p1BottomHit = 485;
+
+                        let p2LeftHit = p2Pos + 50;
+                        let p2RightHit = p2Pos + 160;
+                        let p2TopHit = p2Jumping ? 170 : (p2Crouching ? 330 : 240);
+                        let p2BottomHit = 485;
+
+                        let p1Hit = (itemCenterX >= p1LeftHit && itemCenterX <= p1RightHit && itemCenterY >= p1TopHit && itemCenterY <= p1BottomHit);
+                        let p2Hit = (itemCenterX >= p2LeftHit && itemCenterX <= p2RightHit && itemCenterY >= p2TopHit && itemCenterY <= p2BottomHit);
+
+                        if (p1Hit) {
+                            applyPowerUpToPlayer(1, activeItem.type);
+                            removeActiveItem();
+                            scheduleNextItemSpawn();
+                        } else if (p2Hit) {
+                            applyPowerUpToPlayer(2, activeItem.type);
+                            removeActiveItem();
+                            scheduleNextItemSpawn();
+                        }
+                    }
+                }
+
+                if (healthItemFalling && activeHealthItem) {
+                    activeHealthItem.y += 1.2;
+                    healthItem.style.top = activeHealthItem.y + 'px';
+                    healthItem.style.left = (activeHealthItem.x - cameraX) + 'px'; 
+
+                    if (activeHealthItem.y >= 505) {
+                        removeActiveHealthItem();
+                        scheduleNextHealthSpawn();
+                    } else {
+                        let healthCenterX = activeHealthItem.x + 22.5;
+                        let healthCenterY = activeHealthItem.y + 22.5;
+                        
+                        let p1LeftHit = p1Pos + 50;
+                        let p1RightHit = p1Pos + 160;
+                        let p1TopHit = p1Jumping ? 170 : (p1Crouching ? 330 : 240);
+                        let p1BottomHit = 485;
+
+                        let p2LeftHit = p2Pos + 50;
+                        let p2RightHit = p2Pos + 160;
+                        let p2TopHit = p2Jumping ? 170 : (p2Crouching ? 330 : 240);
+                        let p2BottomHit = 485;
+
+                        let p1Hit = (healthCenterX >= p1LeftHit && healthCenterX <= p1RightHit && healthCenterY >= p1TopHit && healthCenterY <= p1BottomHit);
+                        let p2Hit = (healthCenterX >= p2LeftHit && healthCenterX <= p2RightHit && healthCenterY >= p2TopHit && healthCenterY <= p2BottomHit);
+
+                        if (p1Hit) {
+                            applyPowerUpToPlayer(1, 'health');
+                            removeActiveHealthItem();
+                            scheduleNextHealthSpawn();
+                        } else if (p2Hit) {
+                            applyPowerUpToPlayer(2, 'health');
+                            removeActiveHealthItem();
+                            scheduleNextHealthSpawn();
+                        }
+                    }
+                }
+            }
+
+            requestAnimationFrame(updateGame);
+        }
+
+        requestAnimationFrame(updateGame);
+
+        function removeActiveItem() {
+            powerupItem.style.display = 'none';
+            itemFalling = false;
+            activeItem = null;
+        }
+
+        function removeActiveHealthItem() {
+            healthItem.style.display = 'none';
+            healthItemFalling = false;
+            activeHealthItem = null;
+        }
+
+        function applyPowerUpToPlayer(playerNum, type) {
+            let statusObj = (playerNum === 1) ? p1Status : p2Status;
+            let timersObj = (playerNum === 1) ? p1Timers : p2Timers;
+
+            if (type === 'health') {
+                if (playerNum === 1) {
+                    p1Health = 100;
+                    p1HpBar.style.width = '100%';
+                } else {
+                    p2Health = 100;
+                    p2HpBar.style.width = '100%';
+                }
+                return;
+            }
+
+            if (type === 'death') {
+                if (playerNum === 1) {
+                    p1Health = 0;
+                    p1HpBar.style.width = '0%';
+                    p2Wins++;
+                    p2WinsText.innerText = p2Wins;
+                    if (p2Wins >= 3) {
+                        triggerMatchEnd("p2");
+                    } else {
+                        endGame(`P2 ${p2Selection.toUpperCase()} WINS!`);
+                        p2.style.zIndex = '4';
+                        p1.style.zIndex = '3';
+                        p2.style.backgroundImage = `url('${p2Selection}win.png')`;
+                        updatePlayerVisuals(2, 'win');
+                        p1.style.backgroundImage = `url('${p1Selection}dead.png')`;
+                        updatePlayerVisuals(1, 'dead');
+                    }
+                } else {
+                    p2Health = 0;
+                    p2HpBar.style.width = '0%';
+                    p1Wins++;
+                    p1WinsText.innerText = p1Wins;
+                    if (p1Wins >= 3) {
+                        triggerMatchEnd("p1");
+                    } else {
+                        endGame(`P1 ${p1Selection.toUpperCase()} WINS!`);
+                        p1.style.zIndex = '4';
+                        p2.style.zIndex = '3';
+                        p1.style.backgroundImage = `url('${p1Selection}win.png')`;
+                        updatePlayerVisuals(1, 'win');
+                        p2.style.backgroundImage = `url('${p2Selection}dead.png')`;
+                        updatePlayerVisuals(2, 'dead');
+                    }
+                }
+                return;
+            }
+
+            if (type === 'frozen') {
+                let isJumping = (playerNum === 1) ? p1Jumping : p2Jumping;
+                if (isJumping) {
+                    if (playerNum === 1 && p1JumpTimer) clearTimeout(p1JumpTimer);
+                    if (playerNum === 2 && p2JumpTimer) clearTimeout(p2JumpTimer);
+
+                    if (playerNum === 1) {
+                        if (p1FreezeAirTimeout) clearTimeout(p1FreezeAirTimeout);
+                        p1Status.frozen = true;
+                        updatePlayerVisuals(1, 'jump');
+                        p1FreezeAirTimeout = setTimeout(() => {
+                            p1Status.frozen = false;
+                            updatePlayerVisuals(1, 'idle');
+                            p1.style.bottom = '60px';
+                            p1Jumping = false;
+                            if (!gameOver) {
+                                p1.style.backgroundImage = `url('${p1Selection}.png')`;
+                                updatePlayerVisuals(1, 'idle');
+                            }
+                        }, 2000);
+                    } else {
+                        if (p2FreezeAirTimeout) clearTimeout(p2FreezeAirTimeout);
+                        p2Status.frozen = true;
+                        updatePlayerVisuals(2, 'jump');
+                        p2FreezeAirTimeout = setTimeout(() => {
+                            p2Status.frozen = false;
+                            updatePlayerVisuals(2, 'idle');
+                            p2.style.bottom = '60px';
+                            p2Jumping = false;
+                            if (!gameOver) {
+                                p2.style.backgroundImage = `url('${p2Selection}.png')`;
+                                updatePlayerVisuals(2, 'idle');
+                            }
+                        }, 2000);
+                    }
+                    return;
+                }
+            }
+
+            if (timersObj[type]) clearTimeout(timersObj[type]);
+
+            statusObj[type] = true;
+            let currentPose1 = p1Jumping ? 'jump' : (p1Punching ? 'punch' : (p1Crouching ? 'crouch' : 'idle'));
+            let currentPose2 = p2Jumping ? 'jump' : (p2Punching ? 'punch' : (p2Crouching ? 'crouch' : 'idle'));
+            updatePlayerVisuals(1, currentPose1);
+            updatePlayerVisuals(2, currentPose2);
+
+            let duration = (type === 'frozen') ? 2000 : 5000;
+
+            timersObj[type] = setTimeout(() => {
+                statusObj[type] = false;
+                let cPose1 = p1Jumping ? 'jump' : (p1Punching ? 'punch' : (p1Crouching ? 'crouch' : 'idle'));
+                let cPose2 = p2Jumping ? 'jump' : (p2Punching ? 'punch' : (p2Crouching ? 'crouch' : 'idle'));
+                updatePlayerVisuals(1, cPose1);
+                updatePlayerVisuals(2, cPose2);
+            }, duration);
+        }
+
+        function p1Jump() {
+            p1Jumping = true;
+            p1.style.backgroundImage = `url('${p1Selection}jump.png')`;
+            updatePlayerVisuals(1, 'jump');
+            p1.style.bottom = '210px';
+
+            if (p1JumpTimer) clearTimeout(p1JumpTimer);
+            p1JumpTimer = setTimeout(() => {
+                p1.style.bottom = '60px'; 
+                p1Jumping = false;
+                if (!gameOver) {
+                    p1.style.backgroundImage = `url('${p1Selection}.png')`;
+                    updatePlayerVisuals(1, 'idle');
+                }
+            }, 380);
+        }
+
+        function p1Crouch() {
+            p1Crouching = true;
+            if (p1Selection === 'alex') {
+                p1.style.bottom = '45px';
+            }
+            p1.style.backgroundImage = `url('${p1Selection}crouch.png')`;
+            updatePlayerVisuals(1, 'crouch');
+        }
+
+        function p2Jump() {
+            p2Jumping = true;
+            p2.style.backgroundImage = `url('${p2Selection}jump.png')`;
+            updatePlayerVisuals(2, 'jump');
+            p2.style.bottom = '210px';
+
+            if (p2JumpTimer) clearTimeout(p2JumpTimer);
+            p2JumpTimer = setTimeout(() => {
+                p2.style.bottom = '60px'; 
+                p2Jumping = false;
+                if (!gameOver) {
+                    p2.style.backgroundImage = `url('${p2Selection}.png')`;
+                    updatePlayerVisuals(2, 'idle');
+                }
+            }, 380);
+        }
+
+        function p2Crouch() {
+            p2Crouching = true;
+            if (p2Selection === 'alex') {
+                p2.style.bottom = '45px';
+            }
+            p2.style.backgroundImage = `url('${p2Selection}crouch.png')`;
+            updatePlayerVisuals(2, 'crouch');
+        }
+
+        function p1Punch() {
+            p1Punching = true;
+            p1.style.zIndex = '3';
+            p2.style.zIndex = '2';
+            p1.style.backgroundImage = `url('${p1Selection}punch.png')`;
+            updatePlayerVisuals(1, 'punch');
+            
+            let distance = Math.abs(p2Pos - p1Pos); 
+            
+            let validStanding = !p1Jumping && !p1Crouching && !p2Jumping && !p2Crouching;
+            let validCrouching = (p1Crouching && p2Crouching) || (p1Crouching && !p2Jumping && !p2Crouching);
+            let validJumping = p1Jumping && p2Jumping;
+
+            let canDealDamage = !p1Status.small;
+            let canTakeDamage = !p2Status.big;
+
+            if (distance <= 180 && (validStanding || validCrouching || validJumping) && canDealDamage && canTakeDamage) { 
+                p2Health -= 5; 
+                p2HpBar.style.width = Math.max(0, p2Health) + '%';
+                
+                if (p2Health <= 0) {
+                    p1Wins++;
+                    p1WinsText.innerText = p1Wins;
+                    
+                    if (p1Wins >= 3) {
+                        triggerMatchEnd("p1");
+                    } else {
+                        endGame(`P1 ${p1Selection.toUpperCase()} WINS!`);
+                        p1.style.zIndex = '4';
+                        p2.style.zIndex = '3';
+                        p1.style.backgroundImage = `url('${p1Selection}win.png')`;
+                        updatePlayerVisuals(1, 'win');
+                        p2.style.backgroundImage = `url('${p2Selection}dead.png')`;
+                        updatePlayerVisuals(2, 'dead');
+                    }
+                }
+            }
+
+            setTimeout(() => {
+                p1Punching = false;
+                if (!gameOver) {
+                    p1.style.backgroundImage = p1Crouching ? `url('${p1Selection}crouch.png')` : `url('${p1Selection}.png')`;
+                    updatePlayerVisuals(1, p1Crouching ? 'crouch' : 'idle');
+                }
+            }, 150);
+        }
+
+        function p2Punch() {
+            p2Punching = true;
+            p2.style.zIndex = '3';
+            p1.style.zIndex = '2';
+            p2.style.backgroundImage = `url('${p2Selection}punch.png')`;
+            updatePlayerVisuals(2, 'punch');
+            
+            let distance = Math.abs(p2Pos - p1Pos); 
+            
+            let validStanding = !p2Jumping && !p2Crouching && !p1Jumping && !p1Crouching;
+            let validCrouching = (p2Crouching && p1Crouching) || (p2Crouching && !p1Jumping && !p1Crouching);
+            let validJumping = p2Jumping && p1Jumping;
+
+            let canDealDamage = !p2Status.small;
+            let canTakeDamage = !p1Status.big;
+
+            if (distance <= 180 && (validStanding || validCrouching || validJumping) && canDealDamage && canTakeDamage) { 
+                p1Health -= 5; 
+                p1HpBar.style.width = Math.max(0, p1Health) + '%';
+                
+                if (p1Health <= 0) {
+                    p2Wins++;
+                    p2WinsText.innerText = p2Wins;
+                    
+                    if (p2Wins >= 3) {
+                        triggerMatchEnd("p2");
+                    } else {
+                        endGame(`P2 ${p2Selection.toUpperCase()} WINS!`);
+                        p2.style.zIndex = '4';
+                        p1.style.zIndex = '3';
+                        p2.style.backgroundImage = `url('${p2Selection}win.png')`;
+                        updatePlayerVisuals(2, 'win');
+                        p1.style.backgroundImage = `url('${p1Selection}dead.png')`;
+                        updatePlayerVisuals(1, 'dead');
+                    }
+                }
+            }
+
+            setTimeout(() => {
+                p2Punching = false;
+                if (!gameOver) {
+                    p2.style.backgroundImage = p2Crouching ? `url('${p2Selection}crouch.png')` : `url('${p2Selection}.png')`;
+                    updatePlayerVisuals(2, p2Crouching ? 'crouch' : 'idle');
+                }
+            }, 150);
+        }
+
+        function endGame(winnerText) {
+            gameOver = true;
+            if (spawnTimeout) clearTimeout(spawnTimeout);
+            if (healthSpawnTimeout) clearTimeout(healthSpawnTimeout);
+            removeActiveItem();
+            removeActiveHealthItem();
+            message.innerHTML = winnerText;
+            message.style.display = 'block';
+            restartMessage.style.display = 'block';
+        }
+
+        function triggerMatchEnd(winnerPlayer) {
+            matchEnded = true;
+            gameOver = true;
+            if (spawnTimeout) clearTimeout(spawnTimeout);
+            if (healthSpawnTimeout) clearTimeout(healthSpawnTimeout);
+            removeActiveItem();
+            removeActiveHealthItem();
+            
+            hudElement.style.display = 'none';
+            message.style.display = 'none';
+            restartMessage.style.display = 'none';
+            grandPrizeMessage.style.display = 'block';
+
+            if (winnerPlayer === 'p2') {
+                p2.style.left = '470px';
+                p2.style.bottom = '60px';
+                p2.style.zIndex = '4';
+                p2.style.backgroundImage = `url('${p2Selection}win.png')`;
+                updatePlayerVisuals(2, 'win');
+                p2.style.backgroundSize = "contain";
+                p1.style.display = 'none';
+
+                dillon.style.backgroundImage = "url('dill1.png')";
+                dillon.style.left = '460px';
+                
+                setTimeout(() => {
+                    dillon.style.top = '275px'; 
+                }, 600);
+
+            } else if (winnerPlayer === 'p1') {
+                p1.style.left = '470px';
+                p1.style.bottom = '60px';
+                p1.style.zIndex = '4';
+                p1.style.backgroundImage = `url('${p1Selection}win.png')`;
+                updatePlayerVisuals(1, 'win');
+                p1.style.backgroundSize = "contain";
+                p2.style.display = 'none';
+
+                dillon.style.backgroundImage = "url('dill2.png')";
+                dillon.style.left = '490px';
+                
+                setTimeout(() => {
+                    dillon.style.top = '275px'; 
+                }, 600);
+            }
+        }
+
+        function resetGame() {
+            if (matchEnded) {
+                p1Wins = 0;
+                p2Wins = 0;
+                p1WinsText.innerText = '0';
+                p2WinsText.innerText = '0';
+                matchEnded = false;
+            }
+
+            gameOver = false;
+            
+            applyPowerUps();
+            p1Pos = 600;
+            p2Pos = 1400;
+            cameraX = 425;
+
+            p1LastPos = p1Pos;
+            p2LastPos = p2Pos;
+
+            p1.style.zIndex = '2';
+            p2.style.zIndex = '2';
+
+            hudElement.style.display = 'flex';
+            p1.style.display = 'block';
+            p2.style.display = 'block';
+
+            p1.style.left = (p1Pos - cameraX) + 'px';
+            p2.style.left = (p2Pos - cameraX) + 'px';
+            
+            let bgOffsetPercent = (cameraX / (worldWidth - boardWidth)) * 100;
+            let verticalPos = getVerticalPos();
+            gameBoard.style.backgroundPosition = `${bgOffsetPercent}% ${verticalPos}`;
+
+            p1.style.bottom = '60px';
+            p2.style.bottom = '60px';
+
+            p1.style.backgroundImage = `url('${p1Selection}.png')`;
+            p2.style.backgroundImage = `url('${p2Selection}.png')`;
+
+            updatePlayerVisuals(1, 'idle');
+            updatePlayerVisuals(2, 'idle');
+
+            dillon.style.top = '-220px';
+
+            message.style.display = 'none';
+            restartMessage.style.display = 'none';
+            grandPrizeMessage.style.display = 'none';
+            
+            p1Jumping = false;
+            p1Crouching = false;
+            p2Jumping = false;
+            p2Crouching = false;
+            
+            for (let k in keys) {
+                keys[k] = false;
+            }
+
+            scheduleNextItemSpawn();
+            scheduleNextHealthSpawn();
+        }
+    </script>
+</body>
+</html>
